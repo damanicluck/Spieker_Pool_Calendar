@@ -1,10 +1,10 @@
 import requests
-# import time
 import csv
 from bs4 import BeautifulSoup
-# from selenium import webdriver
-# from selenium.webdriver.firefox.options import Options
-# from selenium.webdriver.support.ui import WebDriverWait
+
+import chromedriver_autoinstaller
+from selenium import webdriver
+from bs4 import BeautifulSoup
 
 daysWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 url = "https://recwell.berkeley.edu/schedules-reservations/lap-swim/"
@@ -51,9 +51,28 @@ def errorCheck(type, message):
         print(type + "failure")
 
 def main():
+    class_list = set()
     response = getResponse(url)
     soup = BeautifulSoup(response.content, 'html.parser')
-    div_text = soup.find(id = "main")
-    # print(div_text)
-    print(div_text.get_text())
+    div = soup.find_all("div")
+
+    # tags = {tag.name for tag in soup.find_all()} 
+    # for tag in tags: 
+  
+    #     # find all element of tag 
+    #     for i in soup.find_all( tag ): 
+    
+    #         # if tag has attribute of class 
+    #         if i.has_attr( "class" ): 
+    
+    #             if len( i['class'] ) != 0: 
+    #                 class_list.add(" ".join( i['class'])) 
+  
+    # print(class_list)     
+
+    # print(soup.prettify())
+    # print(div)
+    # print(div)
+    for i in div:
+        print(i)
 main()
