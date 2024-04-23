@@ -1,78 +1,50 @@
 import requests
+import re
 import csv
 from bs4 import BeautifulSoup
 
 import chromedriver_autoinstaller
 from selenium import webdriver
-from bs4 import BeautifulSoup
+
+chromedriver_autoinstaller.install()
 
 daysWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+
+fields = ["Subject", "Start date", "Start time", "End Date", "End time", "All Day Event", "Location"]
+fileName = "times.csv"
 url = "https://recwell.berkeley.edu/schedules-reservations/lap-swim/"
-url_test = "https://www.geeksforgeeks.org/data-structures/" 
-filename = "times.csv"
-fields = ["Subject", "Start data", "Start time", "End time"]
-my_data = []
-
-# returns response if successful, false if failure
-def getResponse(url):
-    try:
-        response = requests.get(url)
-        response.raise_for_status()  # This will raise an HTTPError if the HTTP request returned an unsuccessful status code
-    except requests.exceptions.HTTPError as errh:
-        print(f"Http Error: {errh}")
-        return False
-    except requests.exceptions.ConnectionError as errc:
-        print(f"Error Connecting: {errc}")
-        return False
-    except requests.exceptions.Timeout as errt:
-        print(f"Timeout Error: {errt}")
-        return False
-    except requests.exceptions.RequestException as err:
-        print(f"OOps: Something Else: {err}")
-        return False
-    return response
-
-# returns a n by 4 array
-def getDivs():
-    return None
-
+urlTest = "https://www.geeksforgeeks.org/data-structures/" 
+poolName = "Spieker"
+validDivs = []
 # returns True if successful, false if failure for writing to csv
-def csvConvert():
+def csvConvert(fileName, getDivs, mode):
     # create csv writer object, write the fields, write the data rows
+    # If quoting is set to csv.QUOTE_MINIMAL, then .writerow() will quote fields only if they contain the delimiter or the quotechar. This is the default case.
     # csv file format for gcal:
-    with open(filename, 'w') as csvfile:
-        csvwriter = csv.writer(csvfile)
-        csvwriter.writerow(fields)
-        csvwriter.writerows(getDivs)
-        return True
+    with open(fileName, mode) as csvfile:
+        csvwriter = csv.writer(csvfile, delimiter=',',  quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        parsedDivs = parsing(getDivs)
+        for div in parsedDivs:
+            csvwriter.writerow(div)
+    return True
 
-def errorCheck(type, message):
-    if message is False: 
-        print(type + "failure")
+def findExpression(word, sequence):
+    for seq in sequence:
+        if word == seq:
+            return True
+    return False
 
-def main():
-    class_list = set()
-    response = getResponse(url)
-    soup = BeautifulSoup(response.content, 'html.parser')
-    div = soup.find_all("div")
+driver = webdriver.Chrome()
+driver.get(url)
+response = driver.page_source
+soup = BeautifulSoup(response, 'html.parser')
+div = soup.find_all("div", {"class": "lw_events_day"})
+for row in div:
+    splitDiv = row.text.strip().split()
+    containsName = findExpression(poolName, splitDiv)
+    # If the row is a row for the poolname make gcal invites for those.
+    if containsName:
+        validDivs.append(row)
 
-    # tags = {tag.name for tag in soup.find_all()} 
-    # for tag in tags: 
-  
-    #     # find all element of tag 
-    #     for i in soup.find_all( tag ): 
-    
-    #         # if tag has attribute of class 
-    #         if i.has_attr( "class" ): 
-    
-    #             if len( i['class'] ) != 0: 
-    #                 class_list.add(" ".join( i['class'])) 
-  
-    # print(class_list)     
-
-    # print(soup.prettify())
-    # print(div)
-    # print(div)
-    for i in div:
-        print(i)
-main()
+if csvConvert(fileName, validDivs, 'a'):
+    print("Successful csv reading and writing")
